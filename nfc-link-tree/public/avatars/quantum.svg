@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0B1220" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="qGrad" x1="40" y1="40" x2="216" y2="216" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="20" y1="20" x2="236" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background base -->
+  <rect width="256" height="256" rx="128" fill="#0A0F1D"/>
+  <circle cx="128" cy="128" r="110" fill="url(#bgGlow)"/>
+  
+  <!-- Outer metallic border ring -->
+  <circle cx="128" cy="128" r="124" stroke="url(#ringGrad)" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Stylized Quantum Q / Orbit Icon -->
+  <circle cx="128" cy="122" r="54" stroke="url(#qGrad)" stroke-width="14" stroke-linecap="round"/>
+  <!-- Q tail accent -->
+  <path d="M152 146L182 176" stroke="#38BDF8" stroke-width="14" stroke-linecap="round"/>
+  <!-- Quantum core spark -->
+  <circle cx="128" cy="122" r="10" fill="#E0F2FE"/>
+</svg>
