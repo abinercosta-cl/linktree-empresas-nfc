@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getEmpresa, listarSlugs } from "@/data/empresas";
 import ProfileHeader from "@/components/ProfileHeader";
+import SaveContactButton from "@/components/SaveContactButton";
 import LinkButton from "@/components/LinkButton";
 import SocialIcons from "@/components/SocialIcons";
 
@@ -61,11 +62,14 @@ export default async function EmpresaPage({ params }: { params: Params }) {
       </div>
 
       {/* Conteúdo Central em Coluna Minimalista */}
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center gap-7 my-auto">
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center gap-6 my-auto">
         <ProfileHeader empresa={empresa} />
 
+        {/* Botão de Destaque: Salvar Contato Direto na Agenda */}
+        <SaveContactButton slug={slug} corPrimaria={brandColor} />
+
         {/* Lista de Links */}
-        <div className="w-full flex flex-col gap-3 mt-2">
+        <div className="w-full flex flex-col gap-3">
           {empresa.links.map((link) => (
             <LinkButton
               key={link.url}
