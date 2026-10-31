@@ -25,9 +25,31 @@ export async function generateMetadata({
   const { empresa: slug } = await params;
   const empresa = await getEmpresa(slug);
   if (!empresa) return {};
+
+  const title = empresa.nome;
+  const description = empresa.bio ?? "Acesse os links e canais oficiais";
+  const image = empresa.avatarUrl || "/avatars/quantum.png";
+
   return {
-    title: `${empresa.nome} | Links Oficiais`,
-    description: empresa.bio ?? undefined,
+    title: `${title} | Links Oficiais`,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [
+        {
+          url: image,
+          alt: title,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
   };
 }
 

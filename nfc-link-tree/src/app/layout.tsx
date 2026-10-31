@@ -13,8 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Avalie Nosso Atendimento',
-  description: 'Deixe a sua avaliação no Google Meu Negócio',
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000")
+  ),
+  title: "Avalie Nosso Atendimento",
+  description: "Deixe a sua avaliação no Google Meu Negócio",
 };
 
 export default function RootLayout({
