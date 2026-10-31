@@ -5,6 +5,7 @@ import ProfileHeader from "@/components/ProfileHeader";
 import SaveContactButton from "@/components/SaveContactButton";
 import LinkButton from "@/components/LinkButton";
 import SocialIcons from "@/components/SocialIcons";
+import QrCodeModal from "@/components/QrCodeModal";
 
 type Params = Promise<{ empresa: string }>;
 
@@ -83,8 +84,11 @@ export default async function EmpresaPage({ params }: { params: Params }) {
         {empresa.redesSociais && <SocialIcons redes={empresa.redesSociais} />}
       </div>
 
-      {/* Footer Minimalista com Selo NFC */}
-      <footer className="relative z-10 pt-10 pb-2 flex flex-col items-center gap-1.5 text-center">
+      {/* Footer Minimalista com Selo NFC & Botão QR Code */}
+      <footer className="relative z-10 pt-10 pb-4 flex flex-col items-center gap-3.5 text-center">
+        {/* Botão Discreto: Exibir QR Code para usuários com NFC desligado */}
+        <QrCodeModal nome={empresa.nome} corPrimaria={brandColor} />
+
         <div className="inline-flex items-center gap-2 text-[11px] font-mono tracking-wider text-slate-400">
           <span
             className="w-1.5 h-1.5 rounded-full"
