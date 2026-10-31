@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Empresa {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  nome         String
+  bio          String?
+  avatarUrl    String?
+  corPrimaria  String        @default("#0EA5E9")
+  corFundo     String        @default("#07090E")
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now())
+  links        Link[]
+  redesSociais RedeSocial[]
+}
+
+model Link {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  label     String
+  url       String
+  ordem     Int      @default(0)
+}
+
+model RedeSocial {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo      String
+  url       String
+}

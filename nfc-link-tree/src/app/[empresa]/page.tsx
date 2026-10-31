@@ -7,9 +7,12 @@ import SocialIcons from "@/components/SocialIcons";
 
 type Params = Promise<{ empresa: string }>;
 
-// Gera as rotas conhecidas em build time; novas empresas adicionadas depois continuam funcionando
+export const revalidate = 3600;
+
+// Gera as rotas conhecidas em build time com suporte a ISR para novos registros
 export async function generateStaticParams() {
-  return listarSlugs().map((slug) => ({ empresa: slug }));
+  const slugs = await listarSlugs();
+  return slugs.map((slug) => ({ empresa: slug }));
 }
 
 export async function generateMetadata({
@@ -18,17 +21,17 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { empresa: slug } = await params;
-  const empresa = getEmpresa(slug);
+  const empresa = await getEmpresa(slug);
   if (!empresa) return {};
   return {
     title: `${empresa.nome} | Links Oficiais`,
-    description: empresa.bio,
+    description: empresa.bio ?? undefined,
   };
 }
 
 export default async function EmpresaPage({ params }: { params: Params }) {
   const { empresa: slug } = await params;
-  const empresa = getEmpresa(slug);
+  const empresa = await getEmpresa(slug);
 
   if (!empresa) notFound();
 
