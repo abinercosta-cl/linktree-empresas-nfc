@@ -20,6 +20,7 @@ model Empresa {
   criadoEm     DateTime      @default(now())
   links        Link[]
   redesSociais RedeSocial[]
+  eventos      Evento[]
 }
 
 model Link {
@@ -29,6 +30,7 @@ model Link {
   label     String
   url       String
   ordem     Int      @default(0)
+  eventos   Evento[]
 }
 
 model RedeSocial {
@@ -37,4 +39,15 @@ model RedeSocial {
   empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   tipo      String
   url       String
+}
+
+model Evento {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo      String   // "view" ou "click"
+  linkId    String?
+  link      Link?    @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  origem    String?  // ex: "nfc", "qr", "direto"
+  criadoEm  DateTime @default(now())
 }

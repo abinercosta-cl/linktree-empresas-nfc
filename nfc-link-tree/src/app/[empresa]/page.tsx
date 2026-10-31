@@ -6,8 +6,10 @@ import SaveContactButton from "@/components/SaveContactButton";
 import LinkButton from "@/components/LinkButton";
 import SocialIcons from "@/components/SocialIcons";
 import QrCodeModal from "@/components/QrCodeModal";
+import TrackPageView from "@/components/TrackPageView";
 
 type Params = Promise<{ empresa: string }>;
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 export const revalidate = 3600;
 
@@ -53,8 +55,17 @@ export async function generateMetadata({
   };
 }
 
-export default async function EmpresaPage({ params }: { params: Params }) {
+export default async function EmpresaPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams?: SearchParams;
+}) {
   const { empresa: slug } = await params;
+  const search = searchParams ? await searchParams : {};
+  const src = typeof search.src === "string" ? search.src : undefined;
+
   const empresa = await getEmpresa(slug);
 
   if (!empresa) notFound();
@@ -66,6 +77,9 @@ export default async function EmpresaPage({ params }: { params: Params }) {
       className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between px-4 py-10 sm:py-16 overflow-x-hidden selection:bg-white/10"
       style={{ backgroundColor: empresa.corFundo ?? "#080B11" }}
     >
+      {/* Telemetria de View da Página */}
+      {empresa.id && <TrackPageView empresaId={empresa.id} origem={src} />}
+
       {/* Luzes de Fundo e Blur Ambientes (Ambient Glow Orbs) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         {/* Orbe Primário - Topo Centrado */}
@@ -97,6 +111,7 @@ export default async function EmpresaPage({ params }: { params: Params }) {
             <LinkButton
               key={link.url}
               link={link}
+              empresaId={empresa.id}
               corPrimaria={brandColor}
             />
           ))}

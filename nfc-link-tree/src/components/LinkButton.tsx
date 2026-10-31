@@ -1,3 +1,6 @@
+"use client";
+
+import React from "react";
 import { LinkItem } from "@/types/empresa";
 import {
   ArrowUpRightIcon,
@@ -7,7 +10,6 @@ import {
   PackageIcon,
   InstagramIcon,
 } from "./Icons";
-import React from "react";
 
 function renderLinkIcon(label: string, url: string, className = "w-5 h-5") {
   const text = `${label} ${url}`.toLowerCase();
@@ -37,19 +39,55 @@ function getDomainHint(url: string): string | null {
 
 export default function LinkButton({
   link,
+  empresaId,
   corPrimaria = "#0EA5E9",
 }: {
   link: LinkItem;
+  empresaId?: string;
   corPrimaria?: string;
 }) {
   const cleanLabel = formatLabel(link.label);
   const domainHint = getDomainHint(link.url);
+
+  const handleClick = () => {
+    if (!empresaId) return;
+
+    let source: string | undefined;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      source = params.get("src") || undefined;
+    }
+
+    const payload = JSON.stringify({
+      empresaId,
+      tipo: "click",
+      linkId: link.id || undefined,
+      origem: source || "direto",
+    });
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon("/api/track", blob);
+      } else {
+        fetch("/api/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.debug("Telemetry click error:", e);
+    }
+  };
 
   return (
     <a
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleClick}
       className="group relative w-full block rounded-2xl p-[1px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
                  hover:scale-[1.015] active:scale-[0.985]"
       style={
