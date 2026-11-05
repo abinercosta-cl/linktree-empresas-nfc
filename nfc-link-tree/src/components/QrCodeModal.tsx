@@ -2,15 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { getSiteUrl } from "@/lib/site-url";
 import { QrCodeIcon, CloseIcon, CopyIcon, CheckIcon } from "./Icons";
 
 interface QrCodeModalProps {
+  slug: string;
   nome: string;
   corPrimaria?: string;
   className?: string;
 }
 
 export default function QrCodeModal({
+  slug,
   nome,
   corPrimaria = "#0EA5E9",
   className = "",
@@ -20,9 +23,7 @@ export default function QrCodeModal({
   const [copied, setCopied] = useState(false);
 
   const handleOpen = () => {
-    if (typeof window !== "undefined") {
-      setUrl(window.location.href);
-    }
+    setUrl(`${getSiteUrl(window.location.origin)}/${slug}`);
     setIsOpen(true);
   };
 
@@ -136,7 +137,7 @@ export default function QrCodeModal({
               <div className="p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center ring-4 ring-white/10">
                 {url ? (
                   <QRCodeSVG
-                    value={url}
+                    value={`${url}?src=qr`}
                     size={190}
                     level="M"
                     fgColor="#000000"

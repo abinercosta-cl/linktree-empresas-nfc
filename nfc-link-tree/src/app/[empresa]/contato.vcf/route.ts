@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getEmpresa } from "@/data/empresas";
+import { getSiteUrl } from "@/lib/site-url";
 
 type RouteParams = Promise<{ empresa: string }>;
 
@@ -77,7 +78,7 @@ export async function GET(
   }
 
   const phone = extractPhoneNumber(empresa);
-  const fallbackUrl = new URL(`/${slug}`, request.url).toString();
+  const fallbackUrl = `${getSiteUrl(new URL(request.url).origin)}/${slug}`;
   const website = extractWebsite(empresa, fallbackUrl);
 
   // Montagem do vCard 3.0 em conformidade com RFC 2426

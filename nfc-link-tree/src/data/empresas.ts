@@ -1,7 +1,8 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { Empresa } from "@/types/empresa";
 
-export async function getEmpresa(slug: string): Promise<Empresa | null> {
+export const getEmpresa = cache(async (slug: string): Promise<Empresa | null> => {
   try {
     const empresa = await prisma.empresa.findFirst({
       where: {
@@ -23,7 +24,7 @@ export async function getEmpresa(slug: string): Promise<Empresa | null> {
     console.error(`Erro ao buscar empresa [${slug}]:`, error);
     return null;
   }
-}
+});
 
 export async function listarSlugs(): Promise<string[]> {
   try {

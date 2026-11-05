@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { getSiteUrl } from '@/lib/site-url';
 import './globals.css';
 
 const geistSans = Geist({
@@ -13,12 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000")
-  ),
+  metadataBase: new URL(getSiteUrl()),
   title: "Avalie Nosso Atendimento",
   description: "Deixe a sua avaliação no Google Meu Negócio",
 };

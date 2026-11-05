@@ -9,7 +9,6 @@ import QrCodeModal from "@/components/QrCodeModal";
 import TrackPageView from "@/components/TrackPageView";
 
 type Params = Promise<{ empresa: string }>;
-type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 export const revalidate = 3600;
 
@@ -57,14 +56,10 @@ export async function generateMetadata({
 
 export default async function EmpresaPage({
   params,
-  searchParams,
 }: {
   params: Params;
-  searchParams?: SearchParams;
 }) {
   const { empresa: slug } = await params;
-  const search = searchParams ? await searchParams : {};
-  const src = typeof search.src === "string" ? search.src : undefined;
 
   const empresa = await getEmpresa(slug);
 
@@ -78,7 +73,7 @@ export default async function EmpresaPage({
       style={{ backgroundColor: empresa.corFundo ?? "#080B11" }}
     >
       {/* Telemetria de View da Página */}
-      {empresa.id && <TrackPageView empresaId={empresa.id} origem={src} />}
+      {empresa.id && <TrackPageView empresaId={empresa.id} />}
 
       {/* Luzes de Fundo e Blur Ambientes (Ambient Glow Orbs) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -124,7 +119,7 @@ export default async function EmpresaPage({
       {/* Footer Minimalista com Selo NFC & Botão QR Code */}
       <footer className="relative z-10 pt-10 pb-4 flex flex-col items-center gap-3.5 text-center">
         {/* Botão Discreto: Exibir QR Code para usuários com NFC desligado */}
-        <QrCodeModal nome={empresa.nome} corPrimaria={brandColor} />
+        <QrCodeModal slug={slug} nome={empresa.nome} corPrimaria={brandColor} />
 
         <div className="inline-flex items-center gap-2 text-[11px] font-mono tracking-wider text-slate-400">
           <span
