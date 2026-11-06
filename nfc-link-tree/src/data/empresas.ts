@@ -6,6 +6,10 @@ import type { Empresa } from "@/types/empresa";
 // Tempo de vida do cache de dados de uma empresa (Data Cache do Next).
 export const EMPRESA_CACHE_SEGUNDOS = 3600;
 
+// Tag do cache de uma empresa. Usada aqui na leitura e pelo painel admin na
+// invalidação (src/lib/cache-empresa.ts): manter num lugar só evita divergência.
+export const tagEmpresa = (slug: string) => `empresa:${slug}`;
+
 async function buscarEmpresa(slug: string): Promise<Empresa | null> {
   return prisma.empresa.findFirst({
     where: {
@@ -32,7 +36,7 @@ export const getEmpresa = cache(
   (slug: string): Promise<Empresa | null> =>
     unstable_cache(buscarEmpresa, ["empresa", slug], {
       revalidate: EMPRESA_CACHE_SEGUNDOS,
-      tags: ["empresas", `empresa:${slug}`],
+      tags: ["empresas", tagEmpresa(slug)],
     })(slug)
 );
 

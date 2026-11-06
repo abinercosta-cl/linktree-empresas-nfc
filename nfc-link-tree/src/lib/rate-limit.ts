@@ -27,3 +27,11 @@ export function checkRateLimit(key: string, limit: number, windowMs: number) {
     retryAfterSeconds: Math.ceil((current.resetAt - now) / 1000),
   };
 }
+
+// Consulta a janela sem contar uma nova tentativa. Usado no login, onde só as
+// falhas contam (registradas com checkRateLimit): logins bem-sucedidos não
+// devem bloquear o administrador.
+export function isRateLimited(key: string, limit: number) {
+  const current = windows.get(key);
+  return !!current && current.resetAt > Date.now() && current.count >= limit;
+}

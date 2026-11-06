@@ -51,3 +51,11 @@ model Evento {
   origem    String?  // ex: "nfc", "qr", "direto"
   criadoEm  DateTime @default(now())
 }
+
+model Administrador {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  senhaHash String
+  nome      String
+  criadoEm  DateTime @default(now())
+}
