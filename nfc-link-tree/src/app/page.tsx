@@ -1,11 +1,22 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { NfcIcon, ArrowUpRightIcon, VerifiedCheckIcon } from "@/components/Icons";
 import { listarEmpresas } from "@/data/empresas";
+import ErrorState from "@/components/ErrorState";
+import type { Empresa } from "@/types/empresa";
 
 export const revalidate = 3600;
 
 export default async function Home() {
-  const tenants = await listarEmpresas();
+  let tenants: Empresa[];
+  try {
+    tenants = await listarEmpresas();
+  } catch (error) {
+    console.error("Home: falha ao listar empresas", error);
+    // Evita que o ISR cacheie o ErrorState (ver [empresa]/page.tsx).
+    await connection();
+    return <ErrorState />;
+  }
 
   return (
     <main className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between px-4 py-12 sm:py-20 bg-[#07090E] text-white selection:bg-sky-500/20 overflow-x-hidden">

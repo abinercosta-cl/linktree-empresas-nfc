@@ -1,22 +1,21 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import type { Metadata } from "next";
-import { getEmpresa, listarSlugs } from "@/data/empresas";
+import { getEmpresa } from "@/data/empresas";
 import ProfileHeader from "@/components/ProfileHeader";
 import SaveContactButton from "@/components/SaveContactButton";
 import LinkButton from "@/components/LinkButton";
 import SocialIcons from "@/components/SocialIcons";
 import QrCodeModal from "@/components/QrCodeModal";
 import TrackPageView from "@/components/TrackPageView";
+import ErrorState from "@/components/ErrorState";
+import type { Empresa } from "@/types/empresa";
 
 type Params = Promise<{ empresa: string }>;
 
-export const revalidate = 3600;
-
-// Gera as rotas conhecidas em build time com suporte a ISR para novos registros
-export async function generateStaticParams() {
-  const slugs = await listarSlugs();
-  return slugs.map((slug) => ({ empresa: slug }));
-}
+// Renderização por requisição: o cache fica nos dados (ver getEmpresa). Com ISR,
+// um ErrorState retornado durante uma queda do banco seria gravado no cache da
+// página por até 1h, e connection() numa rota SSG gera DYNAMIC_SERVER_USAGE (500).
 
 export async function generateMetadata({
   params,
@@ -24,7 +23,15 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { empresa: slug } = await params;
-  const empresa = await getEmpresa(slug);
+
+  let empresa: Empresa | null;
+  try {
+    empresa = await getEmpresa(slug);
+  } catch (error) {
+    console.error(`generateMetadata: falha ao buscar empresa [${slug}]`, error);
+    return { title: "NFC Link Tree" };
+  }
+
   if (!empresa) return {};
 
   const title = empresa.nome;
@@ -59,9 +66,17 @@ export default async function EmpresaPage({
 }: {
   params: Params;
 }) {
+  // Garante renderização por requisição (nunca prerenderizada nem cacheada como página).
+  await connection();
   const { empresa: slug } = await params;
 
-  const empresa = await getEmpresa(slug);
+  let empresa: Empresa | null;
+  try {
+    empresa = await getEmpresa(slug);
+  } catch (error) {
+    console.error(`EmpresaPage: falha ao buscar empresa [${slug}]`, error);
+    return <ErrorState />;
+  }
 
   if (!empresa) notFound();
 

@@ -68,7 +68,21 @@ export async function GET(
   { params }: { params: RouteParams }
 ) {
   const { empresa: slug } = await params;
-  const empresa = await getEmpresa(slug);
+
+  let empresa: Awaited<ReturnType<typeof getEmpresa>>;
+  try {
+    empresa = await getEmpresa(slug);
+  } catch (error) {
+    console.error(`contato.vcf: falha ao buscar empresa [${slug}]`, error);
+    return new Response("Serviço temporariamente indisponível. Tente novamente em instantes.", {
+      status: 503,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Retry-After": "30",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
 
   if (!empresa) {
     return new Response("Empresa não encontrada", {

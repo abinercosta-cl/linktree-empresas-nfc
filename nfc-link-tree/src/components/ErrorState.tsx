@@ -5,7 +5,7 @@ export default function ErrorState({
   retry,
 }: {
   digest?: string;
-  retry: () => void;
+  retry?: () => void;
 }) {
   return (
     <main className="relative min-h-[100dvh] w-full flex flex-col items-center justify-center px-4 py-12 bg-[#07090E] text-white overflow-x-hidden">
@@ -31,7 +31,7 @@ export default function ErrorState({
 
           <button
             type="button"
-            onClick={() => retry()}
+            onClick={() => (retry ? retry() : window.location.reload())}
             className="w-full px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 text-sm font-medium text-slate-100 hover:text-white transition-all duration-200 cursor-pointer active:scale-[0.98]"
           >
             Tentar novamente
