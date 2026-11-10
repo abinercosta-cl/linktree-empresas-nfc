@@ -1,3 +1,4 @@
+import CampoAvatar from "./CampoAvatar";
 import { campo, rotulo } from "./estilos";
 
 type Valores = {
@@ -37,16 +38,7 @@ export default function CamposEmpresa({ valores = {} }: { valores?: Valores }) {
         <textarea name="bio" rows={3} maxLength={500} defaultValue={valores.bio ?? ""} className={campo} />
       </label>
 
-      <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className={rotulo}>Avatar URL</span>
-        <input
-          name="avatarUrl"
-          type="url"
-          placeholder="https://..."
-          defaultValue={valores.avatarUrl ?? ""}
-          className={campo}
-        />
-      </label>
+      <CampoAvatar valorInicial={valores.avatarUrl} />
 
       <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
         <span className={rotulo}>Cor primária</span>

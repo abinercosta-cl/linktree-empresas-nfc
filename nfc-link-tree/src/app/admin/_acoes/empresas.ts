@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
+import { put } from "@vercel/blob";
+import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/admin-sessao";
 import { invalidarCacheEmpresa } from "@/lib/cache-empresa";
@@ -114,6 +116,67 @@ export async function alternarAtivoEmpresa(_: EstadoAcao, formData: FormData): P
     await prisma.empresa.update({ where: { id }, data: { ativo: !empresa.ativo } });
     invalidarCacheEmpresa(empresa.slug);
   });
+}
+
+// ---------- Avatar ----------
+
+const TIPOS_AVATAR = ["image/png", "image/jpeg", "image/jpg"];
+const TAMANHO_MAX_AVATAR = 5 * 1024 * 1024; // 5MB
+const LARGURA_MAX_AVATAR = 512;
+
+export type ResultadoUpload = { url?: string; erro?: string };
+
+// Só envia a imagem e devolve a URL: o avatarUrl é gravado pelo fluxo normal de
+// criarEmpresa/atualizarEmpresa, que já invalida o cache da página pública.
+export async function uploadAvatarEmpresa(formData: FormData): Promise<ResultadoUpload> {
+  await exigirAdmin();
+  let url: string | undefined;
+
+  const estado = await executarAcao(async () => {
+    const arquivo = formData.get("arquivo");
+    if (!(arquivo instanceof File) || arquivo.size === 0) {
+      throw new ErroValidacao("Selecione um arquivo de imagem.");
+    }
+    if (!TIPOS_AVATAR.includes(arquivo.type)) {
+      throw new ErroValidacao("Formato não suportado: envie uma imagem PNG, JPEG ou JPG.");
+    }
+    if (arquivo.size > TAMANHO_MAX_AVATAR) {
+      throw new ErroValidacao("A imagem deve ter no máximo 5MB.");
+    }
+
+    const slugInformado = texto(formData, "slug").toLowerCase();
+    if (!slugInformado) throw new ErroValidacao("Preencha o slug da empresa antes de enviar a imagem.");
+    const slug = validarSlug(slugInformado);
+
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("BLOB_READ_WRITE_TOKEN não configurado: upload de avatar indisponível.");
+      throw new ErroValidacao("Upload de imagens não está configurado no servidor.");
+    }
+
+    const entrada = Buffer.from(await arquivo.arrayBuffer());
+    // O mimetype vem do navegador e pode mentir: confere o formato real do conteúdo.
+    const formatoReal = await sharp(entrada)
+      .metadata()
+      .then((m) => m.format)
+      .catch(() => undefined);
+    if (formatoReal !== "png" && formatoReal !== "jpeg") {
+      throw new ErroValidacao("O arquivo não é uma imagem PNG ou JPEG válida.");
+    }
+
+    const otimizada = await sharp(entrada)
+      .rotate() // aplica a orientação EXIF (fotos de celular) antes de descartar os metadados
+      .resize({ width: LARGURA_MAX_AVATAR, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    const blob = await put(`avatars/${slug}-${Date.now()}.webp`, otimizada, {
+      access: "public",
+      contentType: "image/webp",
+    });
+    url = blob.url;
+  });
+
+  return url ? { url } : { erro: estado.erro };
 }
 
 // ---------- Links ----------
