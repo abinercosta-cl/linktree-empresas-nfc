@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/admin-sessao";
 import { TIPOS_REDE_SOCIAL } from "@/lib/validacao";
 import AcaoForm from "@/app/admin/_componentes/AcaoForm";
+import CampoAvatar from "@/app/admin/_componentes/CampoAvatar";
 import CamposEmpresa from "@/app/admin/_componentes/CamposEmpresa";
 import {
   botaoPerigo,
@@ -104,6 +105,12 @@ export default async function EditarEmpresaPage({ params }: { params: Promise<{ 
           </button>
         </AcaoForm>
       </div>
+
+      {/* Avatar: salvo direto pelo upload, independente do "Salvar dados" */}
+      <section className={`${card} p-6 flex flex-col gap-4`}>
+        <h2 className="text-lg font-semibold tracking-tight">Avatar</h2>
+        <CampoAvatar empresaId={empresa.id} nome={empresa.nome} avatarAtual={empresa.avatarUrl} />
+      </section>
 
       {/* Dados da empresa */}
       <section className={`${card} p-6 flex flex-col gap-4`}>

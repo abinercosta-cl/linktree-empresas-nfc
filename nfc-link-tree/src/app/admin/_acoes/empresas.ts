@@ -24,14 +24,14 @@ import {
 
 const ESQUEMAS_LINK = ["http:", "https:", "mailto:", "tel:"];
 
+// avatarUrl não é lido aqui de propósito: o avatar só é definido por upload
+// (uploadAvatarEmpresa), e o Prisma não altera campos omitidos no update.
 function lerDadosEmpresa(formData: FormData) {
-  const avatarUrl = texto(formData, "avatarUrl");
   const bio = texto(formData, "bio");
   return {
     slug: validarSlug(texto(formData, "slug").toLowerCase()),
     nome: obrigatorio(texto(formData, "nome"), "Nome", 120),
     bio: bio ? obrigatorio(bio, "Bio", 500) : null,
-    avatarUrl: avatarUrl ? validarUrl(avatarUrl, "Avatar URL") : null,
     corPrimaria: validarCor(texto(formData, "corPrimaria"), "Cor primária"),
     corFundo: validarCor(texto(formData, "corFundo"), "Cor de fundo"),
   };
@@ -126,8 +126,9 @@ const LARGURA_MAX_AVATAR = 512;
 
 export type ResultadoUpload = { url?: string; erro?: string };
 
-// Só envia a imagem e devolve a URL: o avatarUrl é gravado pelo fluxo normal de
-// criarEmpresa/atualizarEmpresa, que já invalida o cache da página pública.
+// Envia a imagem e já grava o avatarUrl na empresa, sem depender do "Salvar dados".
+// Exige uma empresa existente: no cadastro, o avatar é enviado na página de edição,
+// para onde criarEmpresa redireciona logo após criar.
 export async function uploadAvatarEmpresa(formData: FormData): Promise<ResultadoUpload> {
   await exigirAdmin();
   let url: string | undefined;
@@ -144,9 +145,8 @@ export async function uploadAvatarEmpresa(formData: FormData): Promise<Resultado
       throw new ErroValidacao("A imagem deve ter no máximo 5MB.");
     }
 
-    const slugInformado = texto(formData, "slug").toLowerCase();
-    if (!slugInformado) throw new ErroValidacao("Preencha o slug da empresa antes de enviar a imagem.");
-    const slug = validarSlug(slugInformado);
+    const empresaId = texto(formData, "empresaId");
+    const slug = await slugDaEmpresa(empresaId);
 
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       console.error("BLOB_READ_WRITE_TOKEN não configurado: upload de avatar indisponível.");
@@ -173,6 +173,9 @@ export async function uploadAvatarEmpresa(formData: FormData): Promise<Resultado
       access: "public",
       contentType: "image/webp",
     });
+
+    await prisma.empresa.update({ where: { id: empresaId }, data: { avatarUrl: blob.url } });
+    invalidarCacheEmpresa(slug);
     url = blob.url;
   });
 

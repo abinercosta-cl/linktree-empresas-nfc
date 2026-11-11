@@ -15,7 +15,13 @@ export default async function NovaEmpresaPage() {
           ← Voltar para empresas
         </Link>
         <h1 className="text-2xl font-bold tracking-tight mt-1">Nova empresa</h1>
-        <p className="text-sm text-slate-400">Depois de criar, você poderá adicionar links e redes sociais.</p>
+        {/* Sem upload de avatar aqui: o upload grava o avatarUrl direto na empresa, que
+            ainda não existe. Não havia no código um padrão de upload antes da criação,
+            então criarEmpresa cria sem avatar e redireciona para a edição, onde o
+            avatar é enviado. */}
+        <p className="text-sm text-slate-400">
+          Depois de criar, você poderá enviar o avatar e adicionar links e redes sociais.
+        </p>
       </div>
 
       <AcaoForm action={criarEmpresa} className={`${card} p-6 flex flex-col gap-5`}>
