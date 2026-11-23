@@ -50,6 +50,8 @@ Todas estão em `.env.example`.
 
 `VERCEL_URL` é injetada pela Vercel e só é usada como alternativa quando `NEXT_PUBLIC_SITE_URL` não está definida.
 
+`SEED_QUANTUM_WHATSAPP` só é necessária para rodar o seed (`npx prisma db seed`): é o WhatsApp da Quantum, mantido fora do código versionado. A aplicação não a lê, então não precisa ser configurada no deploy.
+
 ## Verificação
 
 ```bash

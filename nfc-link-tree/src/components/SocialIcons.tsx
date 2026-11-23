@@ -28,7 +28,7 @@ export default function SocialIcons({ redes }: { redes: RedeSocial[] }) {
         const IconComponent = ICON_MAP[rede.tipo] ?? GlobeIcon;
         return (
           <a
-            key={rede.url}
+            key={rede.id}
             href={rede.url}
             target="_blank"
             rel="noopener noreferrer"

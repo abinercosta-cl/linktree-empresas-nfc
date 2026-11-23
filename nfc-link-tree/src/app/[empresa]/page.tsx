@@ -119,7 +119,7 @@ export default async function EmpresaPage({
         <div className="w-full flex flex-col gap-3">
           {empresa.links.map((link) => (
             <LinkButton
-              key={link.url}
+              key={link.id}
               link={link}
               empresaId={empresa.id}
               corPrimaria={brandColor}

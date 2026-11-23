@@ -6,6 +6,7 @@ import { put } from "@vercel/blob";
 import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/admin-sessao";
+import { apagarAvatarAntigo, ehUrlDoBlob } from "@/lib/avatar-blob";
 import { invalidarCacheEmpresa } from "@/lib/cache-empresa";
 import {
   ErroValidacao,
@@ -146,7 +147,12 @@ export async function uploadAvatarEmpresa(formData: FormData): Promise<Resultado
     }
 
     const empresaId = texto(formData, "empresaId");
-    const slug = await slugDaEmpresa(empresaId);
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: empresaId },
+      select: { slug: true, avatarUrl: true },
+    });
+    if (!empresa) throw new ErroValidacao("Empresa não encontrada.");
+    const { slug, avatarUrl: avatarAntigo } = empresa;
 
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       console.error("BLOB_READ_WRITE_TOKEN não configurado: upload de avatar indisponível.");
@@ -177,6 +183,10 @@ export async function uploadAvatarEmpresa(formData: FormData): Promise<Resultado
     await prisma.empresa.update({ where: { id: empresaId }, data: { avatarUrl: blob.url } });
     invalidarCacheEmpresa(slug);
     url = blob.url;
+
+    if (ehUrlDoBlob(avatarAntigo) && avatarAntigo !== blob.url) {
+      await apagarAvatarAntigo(avatarAntigo);
+    }
   });
 
   return url ? { url } : { erro: estado.erro };

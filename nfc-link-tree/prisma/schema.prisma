@@ -50,6 +50,9 @@ model Evento {
   link      Link?    @relation(fields: [linkId], references: [id], onDelete: SetNull)
   origem    String?  // ex: "nfc", "qr", "direto"
   criadoEm  DateTime @default(now())
+
+  // Consultas de métricas filtram por empresa e período.
+  @@index([empresaId, criadoEm])
 }
 
 model Administrador {

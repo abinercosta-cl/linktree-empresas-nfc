@@ -1,5 +1,5 @@
 export interface LinkItem {
-  id?: string;
+  id: string;
   label: string;
   url: string;
   ordem?: number;
@@ -15,7 +15,7 @@ export type TipoRedeSocial =
   | string;
 
 export interface RedeSocialItem {
-  id?: string;
+  id: string;
   tipo: TipoRedeSocial;
   url: string;
 }
