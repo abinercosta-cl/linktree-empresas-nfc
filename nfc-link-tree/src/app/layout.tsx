@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "Avalie Nosso Atendimento",
-  description: "Deixe a sua avaliação no Google Meu Negócio",
+  title: "NFC Link Tree — Quantum",
+  description: "Páginas de contato por aproximação NFC",
 };
 
 export default function RootLayout({

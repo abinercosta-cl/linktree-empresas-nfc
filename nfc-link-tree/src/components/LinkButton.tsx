@@ -77,8 +77,8 @@ export default function LinkButton({
           keepalive: true,
         }).catch(() => {});
       }
-    } catch (e) {
-      console.debug("Telemetry click error:", e);
+    } catch {
+      // Telemetria é best-effort: uma falha aqui não pode afetar a navegação.
     }
   };
 

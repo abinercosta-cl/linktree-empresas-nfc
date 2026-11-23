@@ -38,8 +38,8 @@ export default function TrackPageView({ empresaId, origem }: TrackPageViewProps)
           keepalive: true,
         }).catch(() => {});
       }
-    } catch (e) {
-      console.debug("Telemetry track error:", e);
+    } catch {
+      // Telemetria é best-effort: uma falha aqui não pode afetar a navegação.
     }
   }, [empresaId, origem]);
 

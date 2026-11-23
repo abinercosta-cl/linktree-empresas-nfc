@@ -3,7 +3,6 @@ export interface LinkItem {
   label: string;
   url: string;
   ordem?: number;
-  icon?: string;
 }
 
 export type TipoRedeSocial =
@@ -22,20 +21,6 @@ export interface RedeSocialItem {
 }
 
 export type RedeSocial = RedeSocialItem;
-
-export interface EmpresaCompleta {
-  id: string;
-  slug: string;
-  nome: string;
-  bio: string | null;
-  avatarUrl: string | null;
-  corPrimaria: string;
-  corFundo: string;
-  ativo: boolean;
-  criadoEm: Date;
-  links: LinkItem[];
-  redesSociais: RedeSocialItem[];
-}
 
 export type Empresa = {
   id?: string;

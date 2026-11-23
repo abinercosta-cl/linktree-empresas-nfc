@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getEmpresa } from "@/data/empresas";
 import { getSiteUrl } from "@/lib/site-url";
+import { extrairDigitosTelefone } from "@/lib/telefone";
 
 type RouteParams = Promise<{ empresa: string }>;
 
@@ -20,9 +21,9 @@ function extractPhoneNumber(empresa: Awaited<ReturnType<typeof getEmpresa>>): st
     (r) => r.tipo.toLowerCase() === "whatsapp"
   );
   if (waSocial?.url) {
-    const digits = waSocial.url.replace(/\D/g, "");
+    const digits = extrairDigitosTelefone(waSocial.url);
     if (digits.length >= 8) {
-      return digits.startsWith("+") ? digits : `+${digits}`;
+      return `+${digits}`;
     }
   }
 
@@ -30,9 +31,9 @@ function extractPhoneNumber(empresa: Awaited<ReturnType<typeof getEmpresa>>): st
   for (const link of empresa.links) {
     const url = link.url.toLowerCase();
     if (url.includes("wa.me") || url.includes("whatsapp.com") || url.startsWith("tel:")) {
-      const digits = link.url.replace(/\D/g, "");
+      const digits = extrairDigitosTelefone(link.url);
       if (digits.length >= 8) {
-        return digits.startsWith("+") ? digits : `+${digits}`;
+        return `+${digits}`;
       }
     }
   }

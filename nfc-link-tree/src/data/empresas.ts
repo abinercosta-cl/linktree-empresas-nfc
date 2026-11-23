@@ -40,19 +40,6 @@ export const getEmpresa = cache(
     })(slug)
 );
 
-export async function listarSlugs(): Promise<string[]> {
-  const empresas = await prisma.empresa.findMany({
-    where: {
-      ativo: true,
-    },
-    select: {
-      slug: true,
-    },
-  });
-
-  return empresas.map((e) => e.slug);
-}
-
 export async function listarEmpresas(): Promise<Empresa[]> {
   return prisma.empresa.findMany({
     where: {
