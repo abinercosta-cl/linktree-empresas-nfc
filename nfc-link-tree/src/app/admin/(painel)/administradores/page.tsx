@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { exigirAdmin } from "@/lib/admin-sessao";
+import { exigirPapelAdmin } from "@/lib/admin-sessao";
 import AcaoForm from "@/app/admin/_componentes/AcaoForm";
 import { botaoPerigo, botaoPrimario, card, selo } from "@/app/admin/_componentes/estilos";
 import { removerAdministrador } from "@/app/admin/_acoes/administradores";
@@ -11,11 +11,19 @@ const formatarData = new Intl.DateTimeFormat("pt-BR", {
 });
 
 export default async function AdministradoresPage() {
-  const adminAtual = await exigirAdmin();
+  // Só ADMIN gerencia administradores; CLIENTE recebe 404.
+  const adminAtual = await exigirPapelAdmin();
 
   const administradores = await prisma.administrador.findMany({
     orderBy: { criadoEm: "asc" },
-    select: { id: true, nome: true, email: true, criadoEm: true },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      criadoEm: true,
+      role: true,
+      empresa: { select: { nome: true, slug: true } },
+    },
   });
 
   return (
@@ -39,8 +47,18 @@ export default async function AdministradoresPage() {
                 <p className="font-semibold truncate flex items-center gap-2">
                   {admin.nome}
                   {ehVoce && <span className={`${selo} border-sky-500/30 bg-sky-500/10 text-sky-300`}>Você</span>}
+                  {admin.role === "ADMIN" ? (
+                    <span className={`${selo} border-white/10 bg-white/[0.04] text-slate-300`}>Admin Quantum</span>
+                  ) : (
+                    <span className={`${selo} border-amber-500/30 bg-amber-500/10 text-amber-300`}>Cliente</span>
+                  )}
                 </p>
                 <p className="text-xs font-mono text-slate-400 truncate">{admin.email}</p>
+                {admin.role === "CLIENTE" && (
+                  <p className="text-xs text-slate-400 truncate">
+                    {admin.empresa ? `${admin.empresa.nome} (/${admin.empresa.slug})` : "Sem empresa vinculada"}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-mono text-slate-500">desde {formatarData.format(admin.criadoEm)}</span>

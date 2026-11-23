@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { exigirAdmin } from "@/lib/admin-sessao";
+import { exigirPapelAdmin } from "@/lib/admin-sessao";
 import AcaoForm from "@/app/admin/_componentes/AcaoForm";
 import CamposEmpresa from "@/app/admin/_componentes/CamposEmpresa";
 import { botaoPrimario, card } from "@/app/admin/_componentes/estilos";
 import { criarEmpresa } from "@/app/admin/_acoes/empresas";
 
 export default async function NovaEmpresaPage() {
-  await exigirAdmin();
+  // Só ADMIN cria empresas; CLIENTE recebe 404.
+  await exigirPapelAdmin();
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">

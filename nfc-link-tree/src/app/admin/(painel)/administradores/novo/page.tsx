@@ -1,11 +1,20 @@
 import Link from "next/link";
-import { exigirAdmin } from "@/lib/admin-sessao";
+import { prisma } from "@/lib/prisma";
+import { exigirPapelAdmin } from "@/lib/admin-sessao";
 import AcaoForm from "@/app/admin/_componentes/AcaoForm";
+import CamposPapel from "@/app/admin/_componentes/CamposPapel";
 import { botaoPrimario, campo, card, rotulo } from "@/app/admin/_componentes/estilos";
 import { criarAdministrador } from "@/app/admin/_acoes/administradores";
 
 export default async function NovoAdministradorPage() {
-  await exigirAdmin();
+  // Só ADMIN gerencia administradores; CLIENTE recebe 404.
+  await exigirPapelAdmin();
+
+  const empresas = await prisma.empresa.findMany({
+    where: { ativo: true },
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true, slug: true },
+  });
 
   return (
     <div className="flex flex-col gap-6 max-w-md">
@@ -30,6 +39,7 @@ export default async function NovoAdministradorPage() {
           <span className={rotulo}>Senha (mínimo 8 caracteres)</span>
           <input name="senha" type="password" required minLength={8} maxLength={72} autoComplete="new-password" className={campo} />
         </label>
+        <CamposPapel empresas={empresas} />
         <button type="submit" className={`${botaoPrimario} self-start`}>
           Criar administrador
         </button>

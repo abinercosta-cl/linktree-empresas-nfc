@@ -27,11 +27,14 @@ export default async function PainelLayout({ children }: { children: React.React
             </Link>
             <nav className="flex items-center gap-1 text-sm">
               <Link href="/admin" className="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.06] transition">
-                Empresas
+                {admin.role === "ADMIN" ? "Empresas" : "Minha empresa"}
               </Link>
-              <Link href="/admin/administradores" className="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.06] transition">
-                Administradores
-              </Link>
+              {/* Só esconde o atalho: a proteção real está em exigirPapelAdmin(). */}
+              {admin.role === "ADMIN" && (
+                <Link href="/admin/administradores" className="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/[0.06] transition">
+                  Administradores
+                </Link>
+              )}
             </nav>
           </div>
 

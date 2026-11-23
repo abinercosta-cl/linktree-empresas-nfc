@@ -36,6 +36,21 @@ npx tsx prisma/criar-admin.ts email@exemplo.com senha123 "Nome opcional"
 
 A senha precisa ter de 8 a 72 caracteres. Depois, entre em `/admin/login`; os demais administradores são convidados pelo próprio painel.
 
+### Papéis no painel
+
+| Papel | Quem | Acesso |
+|---|---|---|
+| `ADMIN` | Equipe da Quantum | Todas as empresas, criação de empresas e gestão de administradores |
+| `CLIENTE` | O próprio cliente | Só a empresa vinculada a ele: dados, avatar, links e redes. Qualquer outra rota do painel responde 404 |
+
+O script cria um `ADMIN` por padrão. Para criar um `CLIENTE`, passe `--cliente` com o slug da empresa:
+
+```bash
+npx tsx prisma/criar-admin.ts email@cliente.com senha123 "Nome" --cliente auto-car-tapecaria
+```
+
+Pelo painel, o papel e a empresa são escolhidos em "Novo administrador".
+
 ## Variáveis de ambiente
 
 Todas estão em `.env.example`.

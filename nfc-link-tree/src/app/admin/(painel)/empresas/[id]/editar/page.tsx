@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { exigirAdmin } from "@/lib/admin-sessao";
+import { exigirAcessoEmpresa } from "@/lib/admin-sessao";
 import { TIPOS_REDE_SOCIAL } from "@/lib/validacao";
 import AcaoForm from "@/app/admin/_componentes/AcaoForm";
 import CampoAvatar from "@/app/admin/_componentes/CampoAvatar";
@@ -51,8 +51,9 @@ function SeletorRede({ valor }: { valor?: string }) {
 }
 
 export default async function EditarEmpresaPage({ params }: { params: Promise<{ id: string }> }) {
-  await exigirAdmin();
   const { id } = await params;
+  // CLIENTE só abre a própria empresa; qualquer outro id responde 404.
+  const admin = await exigirAcessoEmpresa(id);
 
   const empresa = await prisma.empresa.findUnique({
     where: { id },
@@ -67,9 +68,11 @@ export default async function EditarEmpresaPage({ params }: { params: Promise<{ 
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <Link href="/admin" className="text-xs text-slate-400 hover:text-white">
-            ← Voltar para empresas
-          </Link>
+          {admin.role === "ADMIN" && (
+            <Link href="/admin" className="text-xs text-slate-400 hover:text-white">
+              ← Voltar para empresas
+            </Link>
+          )}
           <h1 className="text-2xl font-bold tracking-tight mt-1 truncate">{empresa.nome}</h1>
           <div className="flex items-center gap-2 mt-1">
             {empresa.ativo ? (

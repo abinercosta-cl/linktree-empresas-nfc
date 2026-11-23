@@ -9,18 +9,19 @@ datasource db {
 }
 
 model Empresa {
-  id           String        @id @default(cuid())
-  slug         String        @unique
-  nome         String
-  bio          String?
-  avatarUrl    String?
-  corPrimaria  String        @default("#0EA5E9")
-  corFundo     String        @default("#07090E")
-  ativo        Boolean       @default(true)
-  criadoEm     DateTime      @default(now())
-  links        Link[]
-  redesSociais RedeSocial[]
-  eventos      Evento[]
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  nome            String
+  bio             String?
+  avatarUrl       String?
+  corPrimaria     String          @default("#0EA5E9")
+  corFundo        String          @default("#07090E")
+  ativo           Boolean         @default(true)
+  criadoEm        DateTime        @default(now())
+  links           Link[]
+  redesSociais    RedeSocial[]
+  eventos         Evento[]
+  administradores Administrador[]
 }
 
 model Link {
@@ -34,9 +35,9 @@ model Link {
 }
 
 model RedeSocial {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   empresaId String
-  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   tipo      String
   url       String
 }
@@ -45,20 +46,34 @@ model Evento {
   id        String   @id @default(cuid())
   empresaId String
   empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  tipo      String   // "view" ou "click"
+  tipo      String // "view" ou "click"
   linkId    String?
   link      Link?    @relation(fields: [linkId], references: [id], onDelete: SetNull)
-  origem    String?  // ex: "nfc", "qr", "direto"
+  origem    String? // ex: "nfc", "qr", "direto"
   criadoEm  DateTime @default(now())
 
   // Consultas de métricas filtram por empresa e período.
   @@index([empresaId, criadoEm])
 }
 
+// ADMIN: equipe da Quantum, acesso total ao painel.
+// CLIENTE: acesso só à empresa vinculada em empresaId, sem gestão de administradores.
+enum PapelAdministrador {
+  ADMIN
+  CLIENTE
+}
+
 model Administrador {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String             @id @default(cuid())
+  email     String             @unique
   senhaHash String
   nome      String
-  criadoEm  DateTime @default(now())
+  // O default ADMIN mantém o acesso total de quem já existia antes deste campo.
+  role      PapelAdministrador @default(ADMIN)
+  // SetNull: apagar a empresa não apaga o login; o CLIENTE fica sem acesso a nada.
+  empresaId String?
+  empresa   Empresa?           @relation(fields: [empresaId], references: [id], onDelete: SetNull)
+  criadoEm  DateTime           @default(now())
+
+  @@index([empresaId])
 }

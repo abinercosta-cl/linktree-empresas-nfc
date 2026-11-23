@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 import { put } from "@vercel/blob";
 import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
-import { exigirAdmin } from "@/lib/admin-sessao";
+import { exigirAcessoEmpresa, exigirAdmin, exigirPapelAdmin } from "@/lib/admin-sessao";
 import { apagarAvatarAntigo, ehUrlDoBlob } from "@/lib/avatar-blob";
 import { invalidarCacheEmpresa } from "@/lib/cache-empresa";
 import {
@@ -20,8 +20,14 @@ import {
   type EstadoAcao,
 } from "@/lib/validacao";
 
-// Toda ação começa com exigirAdmin(): Server Actions são endpoints POST
+// Toda ação começa conferindo a sessão: Server Actions são endpoints POST
 // públicos, então a proteção do proxy.ts não basta sozinha.
+// - Ações sobre uma empresa chamam exigirAcessoEmpresa(empresaId) antes de
+//   alterar qualquer coisa (CLIENTE só mexe na própria empresa).
+// - Ações que recebem só o id de um link ou rede social descobrem no banco a
+//   empresa dona do item e então checam o acesso, para um CLIENTE não alterar
+//   itens de outra empresa mandando um id qualquer.
+// - Criar empresa é só para ADMIN (exigirPapelAdmin).
 
 const ESQUEMAS_LINK = ["http:", "https:", "mailto:", "tel:"];
 
@@ -80,7 +86,7 @@ function lerTipoRede(formData: FormData): string {
 // ---------- Empresa ----------
 
 export async function criarEmpresa(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  await exigirPapelAdmin();
   let novoId: string | undefined;
 
   const estado = await executarAcao(async () => {
@@ -96,9 +102,9 @@ export async function criarEmpresa(_: EstadoAcao, formData: FormData): Promise<E
 }
 
 export async function atualizarEmpresa(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  const id = texto(formData, "id");
+  await exigirAcessoEmpresa(id);
   return executarAcao(async () => {
-    const id = texto(formData, "id");
     const slugAntigo = await slugDaEmpresa(id);
     const dados = lerDadosEmpresa(formData);
     await garantirSlugLivre(dados.slug, id);
@@ -109,9 +115,9 @@ export async function atualizarEmpresa(_: EstadoAcao, formData: FormData): Promi
 }
 
 export async function alternarAtivoEmpresa(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  const id = texto(formData, "id");
+  await exigirAcessoEmpresa(id);
   return executarAcao(async () => {
-    const id = texto(formData, "id");
     const empresa = await prisma.empresa.findUnique({ where: { id }, select: { slug: true, ativo: true } });
     if (!empresa) throw new ErroValidacao("Empresa não encontrada.");
     await prisma.empresa.update({ where: { id }, data: { ativo: !empresa.ativo } });
@@ -131,7 +137,8 @@ export type ResultadoUpload = { url?: string; erro?: string };
 // Exige uma empresa existente: no cadastro, o avatar é enviado na página de edição,
 // para onde criarEmpresa redireciona logo após criar.
 export async function uploadAvatarEmpresa(formData: FormData): Promise<ResultadoUpload> {
-  await exigirAdmin();
+  const empresaId = texto(formData, "empresaId");
+  await exigirAcessoEmpresa(empresaId);
   let url: string | undefined;
 
   const estado = await executarAcao(async () => {
@@ -146,7 +153,6 @@ export async function uploadAvatarEmpresa(formData: FormData): Promise<Resultado
       throw new ErroValidacao("A imagem deve ter no máximo 5MB.");
     }
 
-    const empresaId = texto(formData, "empresaId");
     const empresa = await prisma.empresa.findUnique({
       where: { id: empresaId },
       select: { slug: true, avatarUrl: true },
@@ -195,9 +201,9 @@ export async function uploadAvatarEmpresa(formData: FormData): Promise<Resultado
 // ---------- Links ----------
 
 export async function adicionarLink(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  const empresaId = texto(formData, "empresaId");
+  await exigirAcessoEmpresa(empresaId);
   return executarAcao(async () => {
-    const empresaId = texto(formData, "empresaId");
     const slug = await slugDaEmpresa(empresaId);
     const label = obrigatorio(texto(formData, "label"), "Texto do link", 120);
     const url = validarUrl(texto(formData, "url"), "URL do link", ESQUEMAS_LINK);
@@ -217,7 +223,12 @@ export async function atualizarLink(_: EstadoAcao, formData: FormData): Promise<
   await exigirAdmin();
   return executarAcao(async () => {
     const id = texto(formData, "id");
-    const link = await prisma.link.findUnique({ where: { id }, select: { empresa: { select: { slug: true } } } });
+    const link = await prisma.link.findUnique({
+      where: { id },
+      select: { empresaId: true, empresa: { select: { slug: true } } },
+    });
+    // Item inexistente: ADMIN vê a mensagem; CLIENTE recebe 404 como em item alheio.
+    await exigirAcessoEmpresa(link?.empresaId ?? "");
     if (!link) throw new ErroValidacao("Link não encontrado.");
 
     await prisma.link.update({
@@ -236,7 +247,12 @@ export async function removerLink(_: EstadoAcao, formData: FormData): Promise<Es
   await exigirAdmin();
   return executarAcao(async () => {
     const id = texto(formData, "id");
-    const link = await prisma.link.findUnique({ where: { id }, select: { empresa: { select: { slug: true } } } });
+    const link = await prisma.link.findUnique({
+      where: { id },
+      select: { empresaId: true, empresa: { select: { slug: true } } },
+    });
+    // Item inexistente: ADMIN vê a mensagem; CLIENTE recebe 404 como em item alheio.
+    await exigirAcessoEmpresa(link?.empresaId ?? "");
     if (!link) throw new ErroValidacao("Link não encontrado.");
     // Eventos de clique do link são mantidos (linkId vira null pelo onDelete: SetNull).
     await prisma.link.delete({ where: { id } });
@@ -247,9 +263,9 @@ export async function removerLink(_: EstadoAcao, formData: FormData): Promise<Es
 // ---------- Redes sociais ----------
 
 export async function adicionarRedeSocial(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  const empresaId = texto(formData, "empresaId");
+  await exigirAcessoEmpresa(empresaId);
   return executarAcao(async () => {
-    const empresaId = texto(formData, "empresaId");
     const slug = await slugDaEmpresa(empresaId);
     await prisma.redeSocial.create({
       data: {
@@ -266,7 +282,12 @@ export async function atualizarRedeSocial(_: EstadoAcao, formData: FormData): Pr
   await exigirAdmin();
   return executarAcao(async () => {
     const id = texto(formData, "id");
-    const rede = await prisma.redeSocial.findUnique({ where: { id }, select: { empresa: { select: { slug: true } } } });
+    const rede = await prisma.redeSocial.findUnique({
+      where: { id },
+      select: { empresaId: true, empresa: { select: { slug: true } } },
+    });
+    // Item inexistente: ADMIN vê a mensagem; CLIENTE recebe 404 como em item alheio.
+    await exigirAcessoEmpresa(rede?.empresaId ?? "");
     if (!rede) throw new ErroValidacao("Rede social não encontrada.");
     await prisma.redeSocial.update({
       where: { id },
@@ -283,7 +304,12 @@ export async function removerRedeSocial(_: EstadoAcao, formData: FormData): Prom
   await exigirAdmin();
   return executarAcao(async () => {
     const id = texto(formData, "id");
-    const rede = await prisma.redeSocial.findUnique({ where: { id }, select: { empresa: { select: { slug: true } } } });
+    const rede = await prisma.redeSocial.findUnique({
+      where: { id },
+      select: { empresaId: true, empresa: { select: { slug: true } } },
+    });
+    // Item inexistente: ADMIN vê a mensagem; CLIENTE recebe 404 como em item alheio.
+    await exigirAcessoEmpresa(rede?.empresaId ?? "");
     if (!rede) throw new ErroValidacao("Rede social não encontrada.");
     await prisma.redeSocial.delete({ where: { id } });
     invalidarCacheEmpresa(rede.empresa.slug);

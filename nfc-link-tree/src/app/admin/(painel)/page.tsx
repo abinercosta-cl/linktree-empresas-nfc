@@ -1,10 +1,21 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/admin-sessao";
 import { botaoPrimario, botaoSecundario, card, selo } from "@/app/admin/_componentes/estilos";
 
 export default async function AdminDashboard() {
-  await exigirAdmin();
+  const admin = await exigirAdmin();
+
+  // CLIENTE não vê a lista geral: vai direto para a própria empresa.
+  if (admin.role === "CLIENTE") {
+    if (admin.empresaId) redirect(`/admin/empresas/${admin.empresaId}/editar`);
+    return (
+      <div className={`${card} p-8 text-center text-sm text-slate-400`}>
+        Sua conta não está vinculada a nenhuma empresa. Fale com a equipe da Quantum.
+      </div>
+    );
+  }
 
   const empresas = await prisma.empresa.findMany({
     orderBy: { criadoEm: "desc" },
