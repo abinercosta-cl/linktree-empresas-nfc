@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NFC Link Tree
 
-## Getting Started
+Plataforma multi-tenant de páginas de links para empresas, aberta por aproximação de cartão ou tag NFC, ou por QR Code, sem instalar aplicativo. Cada empresa tem uma página em `/<slug>` com a própria identidade visual, botão para salvar o contato na agenda (vCard) e telemetria de acessos e cliques.
 
-First, run the development server:
+É usada pela Quantum para atender clientes como a Auto Car Tapeçaria. Empresas, links, redes sociais, avatares e administradores são gerenciados pelo painel em `/admin`.
+
+## Stack
+
+- **Next.js 16** (App Router, Turbopack, React Compiler) e **React 19**
+- **Tailwind CSS v4**, configurado por CSS em `src/app/globals.css`
+- **Prisma 6** com **Neon** (PostgreSQL)
+- **Auth.js v5** (login por email e senha no painel)
+- **Vercel Blob** para os avatares, otimizados para WebP com `sharp`
+
+## Como rodar localmente
+
+Pré-requisitos: Node.js (versão em `.nvmrc`), npm e um banco PostgreSQL (o projeto usa Neon).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install                 # também roda "prisma generate"
+cp .env.example .env        # preencha com os valores reais
+npx prisma migrate deploy   # aplica as migrations
+npx prisma db seed          # cria as empresas de exemplo
+npm run dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> ⚠️ Se o `.env` apontar para o banco de produção, abrir páginas grava eventos reais e `prisma migrate dev` altera o schema. Para desenvolvimento, prefira um branch do Neon.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Primeiro administrador
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O painel não tem cadastro aberto. Crie o primeiro administrador pela linha de comando:
 
-## Learn More
+```bash
+npx tsx prisma/criar-admin.ts email@exemplo.com senha123 "Nome opcional"
+```
 
-To learn more about Next.js, take a look at the following resources:
+A senha precisa ter de 8 a 72 caracteres. Depois, entre em `/admin/login`; os demais administradores são convidados pelo próprio painel.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Variáveis de ambiente
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Todas estão em `.env.example`.
 
-## Deploy on Vercel
+| Variável | Para que serve |
+|---|---|
+| `DATABASE_URL` | Conexão do Neon **com pooling**, usada pela aplicação |
+| `DIRECT_URL` | Conexão do Neon **sem pooling**, usada pelas migrations |
+| `NEXT_PUBLIC_SITE_URL` | URL pública do site, usada em OpenGraph, QR Code e vCard. É fixada no build |
+| `AUTH_SECRET` | Segredo que assina a sessão do painel. Gere com `openssl rand -base64 32` |
+| `BLOB_READ_WRITE_TOKEN` | Token do Vercel Blob, necessário para o upload de avatar |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`VERCEL_URL` é injetada pela Vercel e só é usada como alternativa quando `NEXT_PUBLIC_SITE_URL` não está definida.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Verificação
+
+```bash
+npx tsc --noEmit   # type-check
+npm run lint       # ESLint
+npm run build      # build de produção
+npm run start      # serve o build
+```
+
+## Estrutura
+
+```
+prisma/              schema, migrations, seed e criar-admin.ts
+prisma.config.ts     configuração da CLI do Prisma (carrega o .env)
+src/app/             rotas: hub (/), página da empresa (/[empresa]),
+                     vCard (/[empresa]/contato.vcf), telemetria (/api/track)
+                     e painel (/admin)
+src/components/      componentes da página pública
+src/data/            leitura das empresas com cache
+src/lib/             Prisma client, sessão do admin, cache, validação, rate limit
+src/auth.ts          configuração do Auth.js
+src/proxy.ts         protege /admin (o antigo middleware.ts no Next 16)
+```
