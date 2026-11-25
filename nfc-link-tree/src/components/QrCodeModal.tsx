@@ -1,23 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { getSiteUrl } from "@/lib/site-url";
 import { QrCodeIcon, CloseIcon, CopyIcon, CheckIcon } from "./Icons";
 
-interface QrCodeModalProps {
-  slug: string;
-  nome: string;
-  corPrimaria?: string;
-  className?: string;
-}
-
-export default function QrCodeModal({
-  slug,
-  nome,
-  corPrimaria = "#0EA5E9",
-  className = "",
-}: QrCodeModalProps) {
+// Alternativa para quem está com o NFC desligado: mostra a página como QR Code.
+// As cores vêm das variáveis da paleta (o modal é renderizado dentro da página).
+export default function QrCodeModal({ slug, nome }: { slug: string; nome: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [copied, setCopied] = useState(false);
@@ -60,118 +50,76 @@ export default function QrCodeModal({
 
   return (
     <>
-      {/* Botão Discreto no Rodapé */}
       <button
         type="button"
         onClick={handleOpen}
-        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono text-slate-300/90 hover:text-white
-                   bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20
-                   backdrop-blur-md shadow-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${className}`}
+        className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-[var(--texto-2)]
+                   transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]
+                   hover:bg-[var(--cartao)] hover:text-[var(--texto)] cursor-pointer
+                   focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--destaque)]"
       >
-        <QrCodeIcon className="w-3.5 h-3.5 text-slate-300" />
-        <span>Exibir QR Code</span>
+        <QrCodeIcon className="size-4" />
+        Mostrar QR Code
       </button>
 
-      {/* Modal Dialog */}
       {isOpen && (
         <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60"
           onClick={() => setIsOpen(false)}
         >
-          {/* Card Glassmorphic do Modal */}
           <div
-            className="relative w-full max-w-sm rounded-3xl p-[1px] transition-all"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="qr-titulo"
+            className="entrar w-full max-w-sm rounded-2xl bg-[var(--fundo)] border border-[var(--linha)] p-6
+                       flex flex-col items-center gap-5 text-center shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Glow cromático com a cor primária */}
-            <div
-              className="absolute inset-0 rounded-3xl opacity-60 blur-xl pointer-events-none"
-              style={{ backgroundColor: `${corPrimaria}30` }}
-            />
-
-            {/* Borda gradiente glassmorphism */}
-            <div
-              className="absolute inset-0 rounded-3xl pointer-events-none"
-              style={{
-                background: `linear-gradient(135deg, ${corPrimaria}60 0%, rgba(255,255,255,0.12) 50%, ${corPrimaria}30 100%)`,
-              }}
-            />
-
-            {/* Conteúdo interno do Modal */}
-            <div className="relative z-10 w-full rounded-[calc(1.5rem-1px)] bg-[#0C111D]/95 border border-white/15 p-6 flex flex-col items-center text-center gap-5 shadow-2xl backdrop-blur-2xl">
-              {/* Topo do modal com Título e Fechar */}
-              <div className="w-full flex items-center justify-between">
-                <div className="flex items-center gap-2 text-left">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/15"
-                    style={{
-                      backgroundColor: `${corPrimaria}20`,
-                      color: corPrimaria,
-                    }}
-                  >
-                    <QrCodeIcon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white tracking-tight leading-tight">
-                      QR Code de Acesso
-                    </h3>
-                    <p className="text-[11px] font-mono text-slate-400 truncate max-w-[190px]">
-                      {nome}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  aria-label="Fechar modal"
-                  className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <CloseIcon className="w-4 h-4" />
-                </button>
+            <div className="w-full flex items-start justify-between gap-4 text-left">
+              <div className="min-w-0">
+                <h2 id="qr-titulo" className="text-[15px] leading-[22px] font-medium text-[var(--texto)]">
+                  QR Code da página
+                </h2>
+                <p className="truncate text-[13px] leading-5 text-[var(--texto-3)]">{nome}</p>
               </div>
-
-              {/* Container do QR Code de Alto Contraste (Fundo branco para garantir leitura perfeita por qualquer câmera em modo claro ou escuro) */}
-              <div className="p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center ring-4 ring-white/10">
-                {url ? (
-                  <QRCodeSVG
-                    value={`${url}?src=qr`}
-                    size={190}
-                    level="M"
-                    fgColor="#000000"
-                    bgColor="#ffffff"
-                  />
-                ) : (
-                  <div className="w-[190px] h-[190px] bg-slate-100 animate-pulse rounded-lg" />
-                )}
-              </div>
-
-              {/* Instruções */}
-              <p className="text-xs text-slate-300/80 leading-relaxed max-w-xs text-balance">
-                Aponte a câmera do celular para escanear e abrir a página oficial sem precisar de NFC.
-              </p>
-
-              {/* Botão de Copiar Link */}
               <button
                 type="button"
-                onClick={handleCopy}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 text-xs font-mono text-slate-200 hover:text-white transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                autoFocus
+                onClick={() => setIsOpen(false)}
+                aria-label="Fechar"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[var(--texto-3)]
+                           transition-colors duration-150 hover:bg-[var(--cartao)] hover:text-[var(--texto)] cursor-pointer
+                           focus-visible:outline-2 focus-visible:outline-[var(--destaque)]"
               >
-                {copied ? (
-                  <>
-                    <CheckIcon className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400 font-semibold">Link copiado para a área de transferência!</span>
-                  </>
-                ) : (
-                  <>
-                    <CopyIcon className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Copiar link da página</span>
-                  </>
-                )}
+                <CloseIcon className="size-4" />
               </button>
             </div>
+
+            {/* Fundo branco e módulos pretos em qualquer tema: é o que toda câmera lê bem. */}
+            <div className="rounded-xl bg-white p-4">
+              {url ? (
+                <QRCodeSVG value={`${url}?src=qr`} size={192} level="M" fgColor="#000000" bgColor="#ffffff" />
+              ) : (
+                <div className="size-48" />
+              )}
+            </div>
+
+            <p className="max-w-[30ch] text-sm leading-5 text-[var(--texto-2)] text-balance">
+              Aponte a câmera do celular para abrir esta página sem NFC
+            </p>
+
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm
+                         bg-[var(--cartao)] border border-[var(--linha)] text-[var(--texto)]
+                         transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]
+                         hover:bg-[var(--elevado)] active:scale-[0.98] cursor-pointer
+                         focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--destaque)]"
+            >
+              {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4 text-[var(--texto-3)]" />}
+              <span aria-live="polite">{copied ? "Link copiado" : "Copiar link"}</span>
+            </button>
           </div>
         </div>
       )}

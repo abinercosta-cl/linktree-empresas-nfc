@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import { RedeSocial, TipoRedeSocial } from "@/types/empresa";
 import {
   WhatsAppIcon,
@@ -8,9 +9,8 @@ import {
   GoogleReviewIcon,
   GlobeIcon,
 } from "./Icons";
-import React from "react";
 
-const ICON_MAP: Record<TipoRedeSocial, React.ComponentType<{ className?: string }>> = {
+const ICON_MAP: Record<TipoRedeSocial, ComponentType<{ className?: string }>> = {
   whatsapp: WhatsAppIcon,
   instagram: InstagramIcon,
   tiktok: TikTokIcon,
@@ -19,11 +19,20 @@ const ICON_MAP: Record<TipoRedeSocial, React.ComponentType<{ className?: string 
   google: GoogleReviewIcon,
 };
 
+const NOMES: Record<string, string> = {
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  facebook: "Facebook",
+  google: "Google",
+};
+
 export default function SocialIcons({ redes }: { redes: RedeSocial[] }) {
   if (!redes || !redes.length) return null;
 
   return (
-    <div className="flex items-center justify-center gap-3.5 mt-2">
+    <nav aria-label="Redes sociais" className="flex items-center justify-center gap-2">
       {redes.map((rede) => {
         const IconComponent = ICON_MAP[rede.tipo] ?? GlobeIcon;
         return (
@@ -32,20 +41,17 @@ export default function SocialIcons({ redes }: { redes: RedeSocial[] }) {
             href={rede.url}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={rede.tipo}
-            className="group relative flex items-center justify-center w-11 h-11 rounded-full
-                       bg-white/[0.04] hover:bg-white/[0.1]
-                       border border-white/10 hover:border-white/25
-                       text-slate-300 hover:text-white
-                       backdrop-blur-md
-                       transition-all duration-300 ease-out
-                       hover:scale-110 active:scale-95
-                       shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+            aria-label={NOMES[rede.tipo] ?? rede.tipo}
+            className="flex size-11 items-center justify-center rounded-[10px]
+                       bg-[var(--cartao)] border border-[var(--linha)] text-[var(--texto-2)]
+                       transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]
+                       hover:bg-[var(--elevado)] hover:text-[var(--texto)] active:scale-[0.96]
+                       focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--destaque)]"
           >
-            <IconComponent className="w-5 h-5 transition-transform duration-300 group-hover:scale-105" />
+            <IconComponent className="size-5" />
           </a>
         );
       })}
-    </div>
+    </nav>
   );
 }

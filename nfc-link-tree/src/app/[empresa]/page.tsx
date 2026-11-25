@@ -1,14 +1,10 @@
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { getEmpresa } from "@/data/empresas";
-import ProfileHeader from "@/components/ProfileHeader";
-import SaveContactButton from "@/components/SaveContactButton";
-import LinkButton from "@/components/LinkButton";
-import SocialIcons from "@/components/SocialIcons";
-import QrCodeModal from "@/components/QrCodeModal";
-import TrackPageView from "@/components/TrackPageView";
 import ErrorState from "@/components/ErrorState";
+import PaginaEmpresa from "@/components/PaginaEmpresa";
+import { criarPaleta } from "@/lib/paleta";
 import type { Empresa } from "@/types/empresa";
 
 type Params = Promise<{ empresa: string }>;
@@ -16,6 +12,17 @@ type Params = Promise<{ empresa: string }>;
 // Renderização por requisição: o cache fica nos dados (ver getEmpresa). Com ISR,
 // um ErrorState retornado durante uma queda do banco seria gravado no cache da
 // página por até 1h, e connection() numa rota SSG gera DYNAMIC_SERVER_USAGE (500).
+
+// Barra do navegador no celular na cor de fundo da empresa.
+export async function generateViewport({ params }: { params: Params }): Promise<Viewport> {
+  const { empresa: slug } = await params;
+  try {
+    const empresa = await getEmpresa(slug);
+    return empresa ? { themeColor: criarPaleta(empresa.corFundo, empresa.corPrimaria).fundo } : {};
+  } catch {
+    return {};
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -80,72 +87,5 @@ export default async function EmpresaPage({
 
   if (!empresa) notFound();
 
-  const brandColor = empresa.corPrimaria ?? "#0EA5E9";
-
-  return (
-    <main
-      className="relative min-h-[100dvh] w-full flex flex-col items-center justify-between px-4 py-10 sm:py-16 overflow-x-hidden selection:bg-white/10"
-      style={{ backgroundColor: empresa.corFundo ?? "#080B11" }}
-    >
-      {/* Telemetria de View da Página */}
-      {empresa.id && <TrackPageView empresaId={empresa.id} />}
-
-      {/* Luzes de Fundo e Blur Ambientes (Ambient Glow Orbs) */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        {/* Orbe Primário - Topo Centrado */}
-        <div
-          className="absolute -top-[160px] left-1/2 -translate-x-1/2 w-[540px] h-[540px] rounded-full blur-[130px] opacity-35"
-          style={{ backgroundColor: brandColor }}
-        />
-
-        {/* Orbe Secundário - Fundo */}
-        <div
-          className="absolute -bottom-[140px] right-[-80px] w-[420px] h-[420px] rounded-full blur-[140px] opacity-20"
-          style={{ backgroundColor: brandColor }}
-        />
-
-        {/* Textura sutil de micro-grid pontilhado para profundidade tátil */}
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] opacity-70" />
-      </div>
-
-      {/* Conteúdo Central em Coluna Minimalista */}
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center gap-6 my-auto">
-        <ProfileHeader empresa={empresa} />
-
-        {/* Botão de Destaque: Salvar Contato Direto na Agenda */}
-        <SaveContactButton slug={slug} corPrimaria={brandColor} />
-
-        {/* Lista de Links */}
-        <div className="w-full flex flex-col gap-3">
-          {empresa.links.map((link) => (
-            <LinkButton
-              key={link.id}
-              link={link}
-              empresaId={empresa.id}
-              corPrimaria={brandColor}
-            />
-          ))}
-        </div>
-
-        {/* Redes Sociais */}
-        {empresa.redesSociais && <SocialIcons redes={empresa.redesSociais} />}
-      </div>
-
-      {/* Footer Minimalista com Selo NFC & Botão QR Code */}
-      <footer className="relative z-10 pt-10 pb-4 flex flex-col items-center gap-3.5 text-center">
-        {/* Botão Discreto: Exibir QR Code para usuários com NFC desligado */}
-        <QrCodeModal slug={slug} nome={empresa.nome} corPrimaria={brandColor} />
-
-        <div className="inline-flex items-center gap-2 text-[11px] font-mono tracking-wider text-slate-400">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: brandColor }}
-          />
-          <span>NFC LINK TREE</span>
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-400/90 font-medium">POWERED BY QUANTUM</span>
-        </div>
-      </footer>
-    </main>
-  );
+  return <PaginaEmpresa empresa={empresa} slug={slug} />;
 }

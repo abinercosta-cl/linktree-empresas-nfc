@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getEmpresa } from "@/data/empresas";
 import { getSiteUrl } from "@/lib/site-url";
-import { extrairDigitosTelefone } from "@/lib/telefone";
+import { telefoneDaEmpresa } from "@/lib/telefone";
 
 type RouteParams = Promise<{ empresa: string }>;
 
@@ -11,34 +11,6 @@ function escapeVCard(value: string): string {
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\n/g, "\\n");
-}
-
-function extractPhoneNumber(empresa: Awaited<ReturnType<typeof getEmpresa>>): string | null {
-  if (!empresa) return null;
-
-  // 1. Procura nas redes sociais pelo WhatsApp
-  const waSocial = empresa.redesSociais?.find(
-    (r) => r.tipo.toLowerCase() === "whatsapp"
-  );
-  if (waSocial?.url) {
-    const digits = extrairDigitosTelefone(waSocial.url);
-    if (digits.length >= 8) {
-      return `+${digits}`;
-    }
-  }
-
-  // 2. Procura nos links customizados por WhatsApp ou tel
-  for (const link of empresa.links) {
-    const url = link.url.toLowerCase();
-    if (url.includes("wa.me") || url.includes("whatsapp.com") || url.startsWith("tel:")) {
-      const digits = extrairDigitosTelefone(link.url);
-      if (digits.length >= 8) {
-        return `+${digits}`;
-      }
-    }
-  }
-
-  return null;
 }
 
 function extractWebsite(
@@ -92,7 +64,7 @@ export async function GET(
     });
   }
 
-  const phone = extractPhoneNumber(empresa);
+  const phone = telefoneDaEmpresa(empresa);
   const fallbackUrl = `${getSiteUrl(new URL(request.url).origin)}/${slug}`;
   const website = extractWebsite(empresa, fallbackUrl);
 

@@ -15,3 +15,21 @@ body {
   color: #f8fafc;
   min-height: 100dvh;
 }
+
+/* Entrada de diálogos: fade e subida curta, com a curva única da interface. */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.entrar {
+  animation: entrar 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrar {
+    animation: none;
+  }
+}

@@ -15,3 +15,36 @@ export function extrairDigitosTelefone(valor: string): string {
   }
   return parte.replace(/\D/g, "");
 }
+
+type FonteTelefone = {
+  links: { url: string }[];
+  redesSociais?: { tipo: string; url: string }[];
+};
+
+// Telefone da empresa no formato E.164 (+5593...), ou null. Procura primeiro a
+// rede social "whatsapp" e depois links wa.me, whatsapp.com ou tel:. É a mesma
+// regra usada no vCard e na prévia do "Salvar contato" da página pública.
+export function telefoneDaEmpresa(empresa: FonteTelefone): string | null {
+  const whatsapp = empresa.redesSociais?.find((r) => r.tipo.toLowerCase() === "whatsapp");
+  if (whatsapp?.url) {
+    const digitos = extrairDigitosTelefone(whatsapp.url);
+    if (digitos.length >= 8) return `+${digitos}`;
+  }
+
+  for (const link of empresa.links) {
+    const url = link.url.toLowerCase();
+    if (url.includes("wa.me") || url.includes("whatsapp.com") || url.startsWith("tel:")) {
+      const digitos = extrairDigitosTelefone(link.url);
+      if (digitos.length >= 8) return `+${digitos}`;
+    }
+  }
+
+  return null;
+}
+
+// Formata para leitura: celulares e fixos do Brasil viram "+55 93 99135-9644";
+// outros números ficam como vieram (+ e dígitos).
+export function formatarTelefone(e164: string): string {
+  const m = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(e164);
+  return m ? `+55 ${m[1]} ${m[2]}-${m[3]}` : e164;
+}
