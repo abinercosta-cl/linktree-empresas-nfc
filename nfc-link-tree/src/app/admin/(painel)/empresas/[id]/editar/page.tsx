@@ -93,20 +93,23 @@ export default async function EditarEmpresaPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <AcaoForm
-          action={alternarAtivoEmpresa}
-          confirmar={
-            empresa.ativo
-              ? "Desativar esta empresa? A página pública dela passa a responder 404."
-              : "Ativar esta empresa? A página pública volta a ficar disponível."
-          }
-          className="flex flex-col items-end gap-2"
-        >
-          <input type="hidden" name="id" value={empresa.id} />
-          <button type="submit" className={empresa.ativo ? botaoPerigo : botaoPrimario}>
-            {empresa.ativo ? "Desativar empresa" : "Ativar empresa"}
-          </button>
-        </AcaoForm>
+        {/* Ativar/desativar é só para ADMIN (a action também barra o CLIENTE). */}
+        {admin.role === "ADMIN" && (
+          <AcaoForm
+            action={alternarAtivoEmpresa}
+            confirmar={
+              empresa.ativo
+                ? "Desativar esta empresa? A página pública dela passa a responder 404."
+                : "Ativar esta empresa? A página pública volta a ficar disponível."
+            }
+            className="flex flex-col items-end gap-2"
+          >
+            <input type="hidden" name="id" value={empresa.id} />
+            <button type="submit" className={empresa.ativo ? botaoPerigo : botaoPrimario}>
+              {empresa.ativo ? "Desativar empresa" : "Ativar empresa"}
+            </button>
+          </AcaoForm>
+        )}
       </div>
 
       {/* Avatar: salvo direto pelo upload, independente do "Salvar dados" */}
@@ -120,7 +123,7 @@ export default async function EditarEmpresaPage({ params }: { params: Promise<{ 
         <h2 className="text-lg font-semibold tracking-tight">Dados da empresa</h2>
         <AcaoForm action={atualizarEmpresa} mensagemSucesso="Dados salvos." className="flex flex-col gap-5">
           <input type="hidden" name="id" value={empresa.id} />
-          <CamposEmpresa valores={empresa} />
+          <CamposEmpresa valores={empresa} slugSomenteLeitura={admin.role !== "ADMIN"} />
           <button type="submit" className={`${botaoPrimario} self-start`}>
             Salvar dados
           </button>

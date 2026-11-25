@@ -27,21 +27,26 @@ import {
 // - Ações que recebem só o id de um link ou rede social descobrem no banco a
 //   empresa dona do item e então checam o acesso, para um CLIENTE não alterar
 //   itens de outra empresa mandando um id qualquer.
-// - Criar empresa é só para ADMIN (exigirPapelAdmin).
+// - Criar, ativar/desativar e mudar o slug de uma empresa é só para ADMIN.
 
 const ESQUEMAS_LINK = ["http:", "https:", "mailto:", "tel:"];
 
-// avatarUrl não é lido aqui de propósito: o avatar só é definido por upload
-// (uploadAvatarEmpresa), e o Prisma não altera campos omitidos no update.
+// Lista fechada dos campos que o formulário de dados pode gravar: qualquer outro
+// campo enviado (ex: ativo) é descartado. avatarUrl fica de fora de propósito:
+// o avatar só é definido por upload (uploadAvatarEmpresa), e o Prisma não altera
+// campos omitidos no update. O slug é lido à parte (lerSlug) porque só ADMIN o altera.
 function lerDadosEmpresa(formData: FormData) {
   const bio = texto(formData, "bio");
   return {
-    slug: validarSlug(texto(formData, "slug").toLowerCase()),
     nome: obrigatorio(texto(formData, "nome"), "Nome", 120),
     bio: bio ? obrigatorio(bio, "Bio", 500) : null,
     corPrimaria: validarCor(texto(formData, "corPrimaria"), "Cor primária"),
     corFundo: validarCor(texto(formData, "corFundo"), "Cor de fundo"),
   };
+}
+
+function lerSlug(formData: FormData): string {
+  return validarSlug(texto(formData, "slug").toLowerCase());
 }
 
 async function garantirSlugLivre(slug: string, ignorarId?: string) {
@@ -90,7 +95,7 @@ export async function criarEmpresa(_: EstadoAcao, formData: FormData): Promise<E
   let novoId: string | undefined;
 
   const estado = await executarAcao(async () => {
-    const dados = lerDadosEmpresa(formData);
+    const dados = { ...lerDadosEmpresa(formData), slug: lerSlug(formData) };
     await garantirSlugLivre(dados.slug);
     const empresa = await prisma.empresa.create({ data: dados }).catch(tratarSlugDuplicado);
     novoId = empresa.id;
@@ -103,20 +108,26 @@ export async function criarEmpresa(_: EstadoAcao, formData: FormData): Promise<E
 
 export async function atualizarEmpresa(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const id = texto(formData, "id");
-  await exigirAcessoEmpresa(id);
+  const admin = await exigirAcessoEmpresa(id);
   return executarAcao(async () => {
     const slugAntigo = await slugDaEmpresa(id);
-    const dados = lerDadosEmpresa(formData);
-    await garantirSlugLivre(dados.slug, id);
+    // CLIENTE não muda o slug: mudar o endereço quebraria as tags NFC e os QR
+    // Codes já impressos. O slug enviado é descartado em silêncio (o campo vem
+    // desabilitado na tela, então nem é enviado), e o resto da edição é salvo.
+    const slug = admin.role === "ADMIN" ? lerSlug(formData) : slugAntigo;
+    const dados = { ...lerDadosEmpresa(formData), slug };
+    await garantirSlugLivre(slug, id);
     await prisma.empresa.update({ where: { id }, data: dados }).catch(tratarSlugDuplicado);
     // Slug alterado: invalida o antigo (passa a 404) e o novo (pode ter um 404 em cache).
-    invalidarCacheEmpresa(slugAntigo, dados.slug);
+    invalidarCacheEmpresa(slugAntigo, slug);
   });
 }
 
+// Só ADMIN ativa/desativa: um CLIENTE poderia tirar a própria página do ar.
+// O botão nem aparece para ele; uma chamada direta recebe 404.
 export async function alternarAtivoEmpresa(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
+  await exigirPapelAdmin();
   const id = texto(formData, "id");
-  await exigirAcessoEmpresa(id);
   return executarAcao(async () => {
     const empresa = await prisma.empresa.findUnique({ where: { id }, select: { slug: true, ativo: true } });
     if (!empresa) throw new ErroValidacao("Empresa não encontrada.");

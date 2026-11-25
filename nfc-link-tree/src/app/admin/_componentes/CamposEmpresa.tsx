@@ -9,7 +9,16 @@ type Valores = {
 };
 
 // Campos compartilhados entre os formulários de criação e edição de empresa.
-export default function CamposEmpresa({ valores = {} }: { valores?: Valores }) {
+// slugSomenteLeitura: para CLIENTE, o slug aparece (é o endereço da página dele)
+// mas não pode ser alterado. Campo disabled não é enviado; o servidor mantém o
+// slug do banco de qualquer forma (ver atualizarEmpresa).
+export default function CamposEmpresa({
+  valores = {},
+  slugSomenteLeitura = false,
+}: {
+  valores?: Valores;
+  slugSomenteLeitura?: boolean;
+}) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
@@ -27,8 +36,14 @@ export default function CamposEmpresa({ valores = {} }: { valores?: Valores }) {
           title="Letras minúsculas, números e hífens (ex: minha-empresa)"
           placeholder="minha-empresa"
           defaultValue={valores.slug}
-          className={`${campo} font-mono`}
+          disabled={slugSomenteLeitura}
+          className={`${campo} font-mono disabled:opacity-60 disabled:cursor-not-allowed`}
         />
+        {slugSomenteLeitura && (
+          <span className="text-[11px] text-slate-500">
+            Só a equipe da Quantum pode alterar o endereço, para não quebrar as tags NFC e os QR Codes.
+          </span>
+        )}
       </label>
 
       <label className="flex flex-col gap-1.5 sm:col-span-2">
